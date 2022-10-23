@@ -25,11 +25,61 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
                 //M5.Lcd.printf("getUUID: %s\r\n", advertisedDevice.getServiceUUID().toString().c_str());
                 device = new BLEAdvertisedDevice(advertisedDevice);
                 doConnect = true;
+            } else {
+                doConnect = false; 
             }
         }
 
     }
 };
+
+void Task1(void *pvParameters) {
+  // loop()書くとBLEスキャン中M5.update()が実行されなくてボタンが取れないのでマルチスレッド化している
+  while(1) {
+    
+    if(bleStart){
+      pBLEScan->start(1, false);
+      drawScreenHeader();
+      pixels.clear();
+      pBLEScan->clearResults();   // delete results fromBLEScan buffer to release memory      
+      lightPixcel(doConnect);
+      drawScreen();   
+    } else {
+      pBLEScan->stop();
+      stopScreenHeader();
+      pixels.clear();
+      lightPixcel(doConnect);
+      delay(1000);
+    }   
+  }
+}
+
+void drawScreenHeader() {
+    M5.Lcd.fillScreen(BLACK);
+    M5.Lcd.setTextSize(2);
+    M5.Lcd.setCursor(0, 0);
+    M5.Lcd.setTextColor(RED);
+    M5.Lcd.print("BLE Scan!\n");
+}
+
+void stopScreenHeader(){
+    M5.Lcd.fillScreen(BLACK);
+    M5.Lcd.setTextSize(2);
+    M5.Lcd.setCursor(0, 0);
+    M5.Lcd.setTextColor(RED);
+    M5.Lcd.print("BLE Stop!\n");
+}
+
+void drawScreen() {
+    //drawScreenHeader();
+    M5.Lcd.setCursor(0, 30);
+    M5.Lcd.setTextSize(7);
+    M5.Lcd.setTextColor(WHITE);
+    //M5.Lcd.printf(" %2d",deviceNum);
+
+    M5.Lcd.printf("%s", doConnect ? "true" : "false");
+
+}
 
 
 void setup() {
@@ -44,6 +94,13 @@ void setup() {
     pBLEScan = BLEDevice::getScan();  //create new scan
     pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
     pBLEScan->setActiveScan(true); //active scan uses more power, but get results faster
+    pBLEScan->setInterval(100); // スキャン間隔5秒
+    pBLEScan->setWindow(99);  // less or equal setInterval value
+    xTaskCreatePinnedToCore(Task1,"Task1", 4096, NULL, 3, NULL, 1);
+    //内容は([タスク名], "[タスク名]", [スタックメモリサイズ(4096or8192)],
+    //      NULL, [タスク優先順位](1-24,大きいほど優先順位が高い)],
+    //      [宣言したタスクハンドルのポインタ(&thp[0])], [Core ID(0 or 1)]); 
+   
     pixels.begin();
 }
 
@@ -52,6 +109,7 @@ void setup() {
 
 void lightPixcel(bool onLight){
   // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
+  pixels.setBrightness(100);
   if(onLight){
     for(int i=0; i<NUMPIXELS; i++){
         int rgb = i%3;
@@ -72,29 +130,12 @@ void loop() {
   
   // ホームボタンが現在押されているか？
   if (M5.BtnA.wasPressed() ) {
-     M5.Lcd.println("BLE Stopped!");
-     pBLEScan ->stop();  //create new scan
-     bleStart = false;
-     
+    bleStart = false;
+    doConnect = false;  
   } else if(M5.BtnB.wasPressed()){
-    //右ボタンが現在押されているか？  
-    M5.Lcd.println("BLE Start!");
-    bleStart = true;      
+    //右ボタンが現在押されているか？      
+    bleStart = true;   
+    doConnect = false;  
   }
-
-
-  if(bleStart){
-    pBLEScan->start(1, false);
-    pixels.clear();
-
-    if(doConnect == true){
-      lightPixcel(doConnect);
-      doConnect = false;
-    } else {
-      lightPixcel(doConnect);   
-    }
-    delay(1000); // Delay a second between loops.        
-  }
-  
 }
 
