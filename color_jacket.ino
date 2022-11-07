@@ -138,7 +138,7 @@ void setup() {
 
 void setPattern(String pattern){
   int pattern_index = 0;
-  if(pattern == "down__"){//down
+  if(pattern == "down"){//down
     int pixelHue;
     for(int i=0; i<NUMPIXELS; i++){
       pixels.setPixelColor(i, pixels.Color(step_num+i%MAX_RGB_PARAM, (step_num+i+MAX_RGB_PARAM/3)%MAX_RGB_PARAM , (step_num+i+MAX_RGB_PARAM/3*2)%MAX_RGB_PARAM));
@@ -150,7 +150,7 @@ void setPattern(String pattern){
         pattern_index++;
       }
     }
-  } else if(pattern == "down"){//up
+  } else if(pattern == "up"){//up
     int light_line_num = step_num%5;
     for(int i=0; i<NUMPIXELS; i++){
       if(light_line_num==0){
