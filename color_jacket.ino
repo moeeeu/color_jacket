@@ -22,6 +22,7 @@ int LED_PATTERN_DREAM[] = {82, 89, 90, 91, 92, 106, 107, 108, 109, 110, 112, 113
 int LED_PATTERN_Z[] = {82, 83, 84, 97, 98, 99, 100, 101, 102, 112, 113, 114, 115, 116, 117, 122, 123, 124, 125, 126, 127, 137, 138, 139, 140, 141, 142, 149, 150, 151, 155, 156, 157, 162, 163, 164, 168, 169, 170, 177, 178, 179, 180, 181, 182, 186, 187, 188, 195, 196, 197, 202, 203, 204, 211, 212, 213, 217, 218, 219, 220, 221, 222, 223, 224, 225, 235, 236, 237, 242, 243, 244, 254, 255, 256, 257, 258, 259, 260, 261, 262, 275, 276, 277};
 int LED_PATTERN_HEART[] = {84, 85, 86, 87, 88, 89, 107, 108, 109, 116, 117, 121, 122, 133, 134, 143, 144, 156, 157, 164, 165, 166, 177, 178, 181, 182, 193, 194, 195, 202, 203, 215, 216, 225, 226, 237, 238, 242, 243, 250, 251, 252, 270, 271, 272, 273, 274, 275};
 int step_num = 0;
+int MAX_RGB_PARAM = 30;
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, Neopixel_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -57,8 +58,6 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
                 doConnect = "denger";
                 pBLEScan->clearResults();  // delete results fromBLEScan buffer to release 
                 BLEDevice::getScan()->stop();
-            } else {
-                doConnect = "false"; 
             }
         } else {
           doConnect = "false";
@@ -72,14 +71,16 @@ void Task1(void *pvParameters) {
   while(1) {
     
     if(bleStart){
-      pBLEScan->start(1, false);
+      pBLEScan->start(3, false);
       drawScreenHeader();
       pixels.clear();  
       lightPixcel(doConnect);
-      drawScreen();   
+      drawScreen();
+      delay(500);
     } else {
       pixels.clear();
       lightPixcel(doConnect);
+      delay(500);
     }   
   }
 }
@@ -111,9 +112,6 @@ void drawScreen() {
 
 }
 
-
-
-
 void setup() {
     M5.begin();
     M5.Lcd.setRotation(3);
@@ -126,8 +124,8 @@ void setup() {
     pBLEScan = BLEDevice::getScan();  //create new scan
     pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
     pBLEScan->setActiveScan(true); //active scan uses more power, but get results faster
-    pBLEScan->setInterval(100); // スキャン間隔5秒
-    pBLEScan->setWindow(99);  // less or equal setInterval value
+    pBLEScan->setInterval(1000); // スキャン間隔5秒
+    pBLEScan->setWindow(999);  // less or equal setInterval value
     xTaskCreatePinnedToCore(Task1,"Task1", 4096, NULL, 3, NULL, 1);
     //内容は([タスク名], "[タスク名]", [スタックメモリサイズ(4096or8192)],
     //      NULL, [タスク優先順位](1-24,大きいほど優先順位が高い)],
@@ -136,18 +134,14 @@ void setup() {
     pixels.begin();
 }
 
+
+
 void setPattern(String pattern){
-  Serial.println(pattern);
   int pattern_index = 0;
-  if(pattern == "down"){
-    int pixelHue = 0;
+  if(pattern == "down__"){//down
+    int pixelHue;
     for(int i=0; i<NUMPIXELS; i++){
-      if((i<20 || i>339)&& i%10 == 0){
-        pixelHue = step_num + (i * 65536L / NUMPIXELLINES);        
-      }else if(i>=20 && i<=239 && i%20 == 0){
-        pixelHue = step_num + (i * 65536L / NUMPIXELLINES); 
-      }
-      pixels.setPixelColor(i, pixels.gamma32(pixels.ColorHSV(pixelHue)));
+      pixels.setPixelColor(i, pixels.Color(step_num+i%MAX_RGB_PARAM, (step_num+i+MAX_RGB_PARAM/3)%MAX_RGB_PARAM , (step_num+i+MAX_RGB_PARAM/3*2)%MAX_RGB_PARAM));
     }
   } else if(pattern == "stop"){
     for(int i=0; i<NUMPIXELS; i++){
@@ -156,19 +150,53 @@ void setPattern(String pattern){
         pattern_index++;
       }
     }
-  } else if(pattern == "up"){
+  } else if(pattern == "down"){//up
+    int light_line_num = step_num%5;
     for(int i=0; i<NUMPIXELS; i++){
+      if(light_line_num==0){
+        if(i<10 || (i>=160 && i<200) || i>=350){
+          pixels.setPixelColor(i, pixels.Color(150, 0, 0));
+        }
+      }else if(light_line_num==1){
+        if((i>=10 && i<20) || (i>=140 && i<160) || (i>=200 && i<220) || (i>=340 && i<350)){
+          pixels.setPixelColor(i, pixels.Color(150, 0, 0));
+        }
+      }else if(light_line_num==2){
+        if((i>=20 && i<40) || (i>=120 && i<140) || (i>=220 && i<240) || (i>=320 && i<340)){
+          pixels.setPixelColor(i, pixels.Color(150, 0, 0));
+        }
+      }else if(light_line_num==3){
+        if((i>=40 && i<60) || (i>=100 && i<120) || (i>=240 && i<260) || (i>=300 && i<320)){
+          pixels.setPixelColor(i, pixels.Color(150, 0, 0));
+        }
+      }else if(light_line_num==4){
+        if((i>=60 && i<100) || (i>=260 && i<300)){
+          pixels.setPixelColor(i, pixels.Color(150, 0, 0));
+        }
+      }else{
+        pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+      }
       if(i == LED_PATTERN_Z[pattern_index]){
-        pixels.setPixelColor(i, pixels.Color(0, 150, 0));
+        pixels.setPixelColor(i, pixels.Color(30, 30, 0));
         pattern_index++;
       }
     }
-  } else if(pattern == "denger"){
+  } else if(pattern == "denger"){//denger
+    int light_line_num = step_num%2;
     for(int i=0; i<NUMPIXELS; i++){
-      // if(i == LED_PATTERN_Z[pattern_index]){
-        pixels.setPixelColor(i, pixels.Color(150, 0, 0));
-        // pattern_index++;
-      // }
+      if(i<10 || (i>=20 && i<40) || (i>=60 && i<80) || (i>=100 && i<120) || (i>=140 && i<160) || (i>=180 && i<200) || (i>=220 && i<240) || (i>=260 && i<280) || (i>=300 && i<320)|| (i>=340 && i<350)){
+        if(light_line_num==0){
+          pixels.setPixelColor(i, pixels.Color(50, 47, 0));
+        }else{
+          pixels.setPixelColor(i, pixels.Color(30, 0, 0));
+        }
+      }else{
+        if(light_line_num==0){
+          pixels.setPixelColor(i, pixels.Color(30, 0, 0));
+        }else{
+          pixels.setPixelColor(i, pixels.Color(50 , 47, 0));
+        }
+      }
     }
   } else {
     for(int i=0; i<NUMPIXELS; i++){
@@ -183,8 +211,8 @@ void lightPixcel(String onLight){
   pixels.setBrightness(100);
   setPattern(onLight);
   pixels.show();
-  step_num += 2048;
-  if (step_num >= 65536) {
+  step_num++;
+  if (step_num >= MAX_RGB_PARAM) {
     step_num = 0;
   }
 }
