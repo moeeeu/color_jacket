@@ -37,21 +37,31 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
                 //M5.Lcd.printf("getUUID: %s\r\n", advertisedDevice.getServiceUUID().toString().c_str());
                 device = new BLEAdvertisedDevice(advertisedDevice);
                 doConnect = "down";
+                pBLEScan->clearResults();  // delete results fromBLEScan buffer to release 
+                BLEDevice::getScan()->stop();
             } else if(strncmp(advertisedDevice.getServiceUUID().toString().c_str(),stop_uuid, 36) == 0){
                 Serial.println(advertisedDevice.getServiceUUID().toString().c_str());
                 device = new BLEAdvertisedDevice(advertisedDevice);
                 doConnect = "stop";
+                pBLEScan->clearResults();  // delete results fromBLEScan buffer to release 
+                BLEDevice::getScan()->stop();
             } else if(strncmp(advertisedDevice.getServiceUUID().toString().c_str(),up_uuid, 36) == 0){
                 Serial.println(advertisedDevice.getServiceUUID().toString().c_str());
                 device = new BLEAdvertisedDevice(advertisedDevice);
                 doConnect = "up";
+                pBLEScan->clearResults();  // delete results fromBLEScan buffer to release 
+                BLEDevice::getScan()->stop();
             } else if(strncmp(advertisedDevice.getServiceUUID().toString().c_str(),denger_uuid, 36) == 0){
                 Serial.println(advertisedDevice.getServiceUUID().toString().c_str());
                 device = new BLEAdvertisedDevice(advertisedDevice);
                 doConnect = "denger";
+                pBLEScan->clearResults();  // delete results fromBLEScan buffer to release 
+                BLEDevice::getScan()->stop();
             } else {
                 doConnect = "false"; 
             }
+        } else {
+          doConnect = "false";
         }
 
     }
@@ -64,16 +74,12 @@ void Task1(void *pvParameters) {
     if(bleStart){
       pBLEScan->start(1, false);
       drawScreenHeader();
-      pixels.clear();
-      pBLEScan->clearResults();   // delete results fromBLEScan buffer to release memory      
+      pixels.clear();  
       lightPixcel(doConnect);
       drawScreen();   
     } else {
-      pBLEScan->stop();
-      stopScreenHeader();
       pixels.clear();
       lightPixcel(doConnect);
-      delay(1000);
     }   
   }
 }
